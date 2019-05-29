@@ -1,0 +1,6 @@
+framework module jcc_oc_base_lib {
+  umbrella header "jcc_oc_base_lib-umbrella.h"
+
+  export *
+  module * { export * }
+}
