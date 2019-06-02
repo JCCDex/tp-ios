@@ -39,9 +39,6 @@
 
 @property (nonatomic, strong) TPOSWalletDao *walletDao;
 
-@property (nonatomic, assign) BOOL shouldUpgrade;
-@property (nonatomic, strong) NSString *downloadUrl;
-
 @end
 
 @implementation AppDelegate
@@ -56,16 +53,6 @@
         self.window.rootViewController = navigationController;
         [self.window makeKeyAndVisible];
     }];
-    
-#ifndef DEBUG
-    //启动bugly crash 收集
-    [Bugly startWithAppId:kBuglyAppId];
-#endif
-    
-    //注册微信
-    [WXApi registerApp:kWXAppId];
-    //注册QQ
-    [[TencentOAuth alloc] initWithAppId:kQQAppId andDelegate:(id)self];
     
     //设置IQKeyboard
     [[IQKeyboardManager sharedManager] setEnable:YES];
@@ -118,31 +105,9 @@
     //检查数据库更新
     [self checkDBVersion];
     
+    NSLog(@"NSHomeDirectory:%@",NSHomeDirectory());
+    
     return YES;
-}
-
-//弹出升级弹窗
-- (void)showSJAlertWithDownloadUrl:(NSString *)urlPath {
-    UIAlertController *alert = [UIAlertController alertControllerWithTitle:[[TPOSLocalizedHelper standardHelper] stringWithKey:@"warm_tip"] message:[[TPOSLocalizedHelper standardHelper] stringWithKey:@"update_tips"] preferredStyle:UIAlertControllerStyleAlert];
-    UIAlertAction *confirm = [UIAlertAction actionWithTitle:[[TPOSLocalizedHelper standardHelper] stringWithKey:@"go_download"] style:UIAlertActionStyleDefault handler:^(UIAlertAction * _Nonnull action) {
-        
-        NSURL *url = [NSURL URLWithString:urlPath];
-        
-        if(@available(iOS 10.0, *)){
-            if ([[UIApplication sharedApplication] respondsToSelector:@selector(openURL:options:completionHandler:)]) {
-                [[UIApplication sharedApplication] openURL:url options:@{} completionHandler:nil];
-            } else {
-                [[UIApplication sharedApplication] openURL:url];
-            }
-        } else{
-            bool can = [[UIApplication sharedApplication] canOpenURL:url];
-            if(can){
-                [[UIApplication sharedApplication] openURL:url];
-            }
-        }
-    }];
-    [alert addAction:confirm];
-    [self.window.rootViewController presentViewController:alert animated:YES completion:nil];
 }
 
 //数据库升级
@@ -227,36 +192,6 @@
             }
         }];
     }
-}
-
-- (void)applicationWillEnterForeground:(UIApplication *)application {
-    // Called as part of the transition from the background to the active state; here you can undo many of the changes made on entering the background.
-    if (self.shouldUpgrade && self.downloadUrl) {
-        [self showSJAlertWithDownloadUrl:self.downloadUrl];
-    }
-}
-
-- (void)applicationDidBecomeActive:(UIApplication *)application {
-//    if (self.backupAlert) {
-//        return;
-//    }
-//    __weak typeof(self) weakSelf = self;
-//    [self.walletDao findAllWithComplement:^(NSArray<TPOSWalletModel *> *walletModels) {
-//        [walletModels enumerateObjectsUsingBlock:^(TPOSWalletModel * _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
-//            if (!obj.backup) {
-//                weakSelf.backupAlert = [TPOSBackupAlert showWithWalletModel:obj inView:weakSelf.window.rootViewController.view navigation:(id)weakSelf.window.rootViewController];
-//                *stop = YES;
-//            }
-//        }];
-//    }];
-}
-
-- (BOOL)application:(UIApplication *)app openURL:(NSURL *)url options:(NSDictionary<UIApplicationOpenURLOptionsKey,id> *)options {
-    BOOL handle = [WXApi handleOpenURL:url delegate:(id)self];
-    if (!handle) {
-        handle = [QQApiInterface handleOpenURL:url delegate:(id)self];
-    }
-    return handle;
 }
 
 - (TPOSWalletDao *)walletDao {
